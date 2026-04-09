@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro CRM Dashboard</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f1f5f9;
+}
+
+/* LOGIN */
+#loginPage{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.login-box{
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+/* DASHBOARD */
+#dashboard{
+    display:none;
+    padding:20px;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.stats{
+    display:flex;
+    gap:10px;
+    margin:20px 0;
+}
+
+.stat{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    flex:1;
+    text-align:center;
+}
+
+/* FORM */
+form{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+}
+
+input,select,textarea,button{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+.delete{background:red;}
+.edit{background:green;}
+
+/* LEADS */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:10px;
+    margin-top:20px;
+}
+
+.card{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+}
+
+.filters{
+    display:flex;
+    gap:10px;
+    margin:20px 0;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage">
+    <div class="login-box">
+        <h2>Admin Login</h2>
+        <input id="username" placeholder="Username">
+        <input id="password" type="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+
+    <div class="header">
+        <h1>📊 CRM Dashboard</h1>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat">Total Leads: <span id="total"></span></div>
+        <div class="stat">Converted: <span id="converted"></span></div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+        <input type="text" id="search" placeholder="Search..." onkeyup="filterLeads()">
+        <select id="filterStatus" onchange="filterLeads()">
+            <option value="">All</option>
+            <option>New</option>
+            <option>Contacted</option>
+            <option>Converted</option>
+        </select>
+    </div>
+
+    <!-- FORM -->
+    <form id="leadForm">
+        <input id="name" placeholder="Name" required>
+        <input id="email" placeholder="Email" required>
+        <input id="source" placeholder="Source">
+        <select id="status">
+            <option>New</option>
+            <option>Contacted</option>
+            <option>Converted</option>
+        </select>
+        <textarea id="notes" placeholder="Notes"></textarea>
+        <button>Add Lead</button>
+    </form>
+
+    <!-- LEADS -->
+    <div class="grid" id="leadList"></div>
+
+</div>
+
+<script>
+let leads = JSON.parse(localStorage.getItem("leads")) || [];
+
+/* LOGIN */
+function login(){
+    if(username.value==="admin" && password.value==="1234"){
+        loginPage.style.display="none";
+        dashboard.style.display="block";
+        displayLeads();
+    } else alert("Wrong login");
+}
+
+function logout(){ location.reload(); }
+
+/* ADD */
+leadForm.addEventListener("submit",e=>{
+    e.preventDefault();
+
+    leads.push({
+        name:name.value,
+        email:email.value,
+        source:source.value,
+        status:status.value,
+        notes:notes.value,
+        time:new Date().toLocaleString()
+    });
+
+    localStorage.setItem("leads",JSON.stringify(leads));
+    leadForm.reset();
+    displayLeads();
+});
+
+/* DISPLAY */
+function displayLeads(data = leads){
+    leadList.innerHTML="";
+    data.forEach((l,i)=>{
+        leadList.innerHTML += `
+        <div class="card">
+            <h3>${l.name}</h3>
+            <p>${l.email}</p>
+            <p><b>Source:</b> ${l.source}</p>
+            <p><b>Status:</b> ${l.status}</p>
+            <p>${l.notes}</p>
+            <small>${l.time}</small><br>
+            <button class="edit" onclick="editLead(${i})">Edit</button>
+            <button class="delete" onclick="deleteLead(${i})">Delete</button>
+        </div>`;
+    });
+
+    total.innerText = leads.length;
+    converted.innerText = leads.filter(l=>l.status==="Converted").length;
+}
+
+/* DELETE */
+function deleteLead(i){
+    leads.splice(i,1);
+    localStorage.setItem("leads",JSON.stringify(leads));
+    displayLeads();
+}
+
+/* EDIT */
+function editLead(i){
+    let l = leads[i];
+    name.value = l.name;
+    email.value = l.email;
+    source.value = l.source;
+    status.value = l.status;
+    notes.value = l.notes;
+
+    deleteLead(i);
+}
+
+/* FILTER */
+function filterLeads(){
+    let text = search.value.toLowerCase();
+    let statusFilter = filterStatus.value;
+
+    let filtered = leads.filter(l =>
+        l.name.toLowerCase().includes(text) &&
+        (statusFilter==="" || l.status===statusFilter)
+    );
+
+    displayLeads(filtered);
+}
+
+displayLeads();
+</script>
+
+</body>
+</html>
+
